@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>複利大師</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #1a1a1a;
+            --card-bg: #2d2d2d;
+            --primary-color: #8ab4f8;
+            --text-color: #e8eaed;
+            --accent-color: #3c4043;
+            --footer-text: #999;
+        }
+
+        /* 彩虹配色定義 */
+        [data-theme="red"] { --primary-color: #ff5252; --accent-color: #4a2b2b; }
+        [data-theme="orange"] { --primary-color: #ffab40; --accent-color: #4a3b2b; }
+        [data-theme="yellow"] { --primary-color: #ffd740; --accent-color: #4a462b; }
+        [data-theme="green"] { --primary-color: #69f0ae; --accent-color: #2b4a3a; }
+        [data-theme="blue"] { --primary-color: #40c4ff; --accent-color: #2b3e4a; }
+        [data-theme="indigo"] { --primary-color: #7c4dff; --accent-color: #342b4a; }
+        [data-theme="purple"] { --primary-color: #e040fb; --accent-color: #472b4a; }
+        [data-theme="classic-blue"] { --bg-color: #f0f2f5; --card-bg: #ffffff; --primary-color: #1a73e8; --text-color: #333; --accent-color: #e8f0fe; --footer-text: #666; }
+
+        body {
+            font-family: -apple-system, "Segoe UI", "Microsoft JhengHei", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 15px;
+            transition: all 0.3s ease;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            max-width: 1000px;
+            width: 100%;
+            margin: 0 auto 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .theme-switcher {
+            padding: 8px 12px;
+            border-radius: 20px;
+            border: 1px solid var(--primary-color);
+            background: var(--card-bg);
+            color: var(--text-color);
+            cursor: pointer;
+            outline: none;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+            flex-grow: 1;
+            width: 100%;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .card.featured { grid-column: span 1; border: 1.5px solid var(--primary-color); }
+        @media (min-width: 900px) { .card.featured { grid-column: span 2; } }
+
+        h2 { margin-top: 0; font-size: 1.3em; border-left: 5px solid var(--primary-color); padding-left: 10px; margin-bottom: 20px; }
+
+        .input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .input-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.85rem; opacity: 0.9; }
+        input {
+            width: 100%; padding: 12px; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;
+            background: rgba(0,0,0,0.2); color: #fff; box-sizing: border-box; font-size: 1rem;
+        }
+
+        [data-theme="classic-blue"] input { background: #fff; color: #333; border: 1px solid #ddd; }
+
+        .result {
+            margin: 15px 0; padding: 15px; background: var(--accent-color);
+            border-radius: 10px; font-size: 1.1rem; line-height: 1.6;
+        }
+
+        .chart-container { position: relative; height: 300px; width: 100%; margin-top: 10px; }
+
+        footer { text-align: center; padding: 30px 0; color: var(--footer-text); font-size: 0.9rem; }
+    </style>
+</head>
+<body data-theme="dark">
+
+<header>
+    <h1>📈 複利計算</h1>
+    <select class="theme-switcher" id="themeSelect">
+        <option value="dark">🌙 極致深色</option>
+        <option value="red">🔴 熱情紅</option>
+        <option value="orange">🟠 活力橙</option>
+        <option value="yellow">🟡 明亮黃</option>
+        <option value="green">🟢 生機綠</option>
+        <option value="blue">🔵 湛藍色</option>
+        <option value="indigo">🔮 靛藍色</option>
+        <option value="purple">🟣 夢幻紫</option>
+        <option value="classic-blue">🌐 經典亮藍</option>
+    </select>
+</header>
+
+<div class="container">
+    <div class="card featured">
+        <h2>💰 複利 (本金+月存)</h2>
+        <div class="input-grid">
+            <div class="input-group">
+                <label>初始本金 ($)</label>
+                <input type="number" id="p_mix" value="500000">
+            </div>
+            <div class="input-group">
+                <label>每月續存額 ($)</label>
+                <input type="number" id="m_mix" value="10000">
+            </div>
+            <div class="input-group">
+                <label>年化報酬率 (%)</label>
+                <input type="number" id="r_mix" value="7">
+            </div>
+            <div class="input-group">
+                <label>投資年數</label>
+                <input type="number" id="t_mix" value="20">
+            </div>
+        </div>
+        <div class="result" id="res_mix"></div>
+        <div class="chart-container"><canvas id="chart_mix"></canvas></div>
+    </div>
+
+    <div class="card">
+        <h2>🎯 目標反推</h2>
+        <div class="input-group">
+            <label>設定資產目標 ($)</label>
+            <input type="number" id="target" value="10000000">
+        </div>
+        <div class="input-group">
+            <label>預期報酬率 (%)</label>
+            <input type="number" id="r_target" value="7">
+        </div>
+        <div class="input-group">
+            <label>規劃達成年數</label>
+            <input type="number" id="t_target" value="25">
+        </div>
+        <div class="result" id="res_target"></div>
+        <div class="chart-container"><canvas id="chart_target"></canvas></div>
+    </div>
+</div>
+
+<footer>2026 Copyright © Titleman</footer>
+
+<script>
+    let charts = {};
+    const fieldIds = ['p_mix', 'm_mix', 'r_mix', 't_mix', 'target', 'r_target', 't_target'];
+
+    window.onload = () => {
+        const savedTheme = localStorage.getItem('app-theme') || 'dark';
+        document.body.setAttribute('data-theme', savedTheme);
+        document.getElementById('themeSelect').value = savedTheme;
+
+        fieldIds.forEach(id => {
+            const savedVal = localStorage.getItem(id);
+            if (savedVal) document.getElementById(id).value = savedVal;
+            document.getElementById(id).addEventListener('input', updateAll);
+        });
+
+        document.getElementById('themeSelect').addEventListener('change', (e) => {
+            const theme = e.target.value;
+            document.body.setAttribute('data-theme', theme);
+            localStorage.setItem('app-theme', theme);
+            updateAll(); 
+        });
+        updateAll();
+    };
+
+    function updateAll() {
+        fieldIds.forEach(id => localStorage.setItem(id, document.getElementById(id).value));
+        renderMixed();
+        renderGoal();
+    }
+
+    function getThemeColor() {
+        return getComputedStyle(document.body).getPropertyValue('--primary-color').trim();
+    }
+
+    function renderMixed() {
+        const P = parseFloat(document.getElementById('p_mix').value) || 0;
+        const M = parseFloat(document.getElementById('m_mix').value) || 0;
+        const rY = (parseFloat(document.getElementById('r_mix').value) || 0) / 100;
+        const rM = rY / 12;
+        const t = parseInt(document.getElementById('t_mix').value) || 0;
+        
+        let assetData = [P];
+        let costData = [P];
+        
+        for(let y=1; y<=t; y++) {
+            const months = y * 12;
+            const fromP = P * Math.pow(1 + rM, months);
+            const fromM = rM > 0 ? M * ((Math.pow(1 + rM, months) - 1) / rM) * (1 + rM) : M * months;
+            assetData.push((fromP + fromM).toFixed(0));
+            costData.push(P + (M * months));
+        }
+        
+        const finalAsset = assetData[assetData.length-1];
+        const finalCost = costData[costData.length-1];
+        
+        document.getElementById('res_mix').innerHTML = `
+            期末總額：<strong>$${Number(finalAsset).toLocaleString()}</strong><br>
+            投入本金：$${finalCost.toLocaleString()}<br>
+            累積獲利：<span style="color:var(--primary-color); font-weight:bold;">$${(finalAsset - finalCost).toLocaleString()}</span>
+        `;
+        drawDoubleChart('chart_mix', assetData, costData);
+    }
+
+    function renderGoal() {
+        const target = parseFloat(document.getElementById('target').value) || 0;
+        const rY = (parseFloat(document.getElementById('r_target').value) || 0) / 100;
+        const rM = rY / 12;
+        const t = parseInt(document.getElementById('t_target').value) || 0;
+        const n = t * 12;
+        
+        let monthly = rM > 0 ? (target * rM) / ((Math.pow(1+rM, n) - 1) * (1+rM)) : target / n;
+        document.getElementById('res_target').innerHTML = `每月需存：<strong>$${Math.ceil(monthly).toLocaleString()}</strong>`;
+        
+        let assetData = [0];
+        let costData = [0];
+        for(let y=1; y<=t; y++) {
+            const val = rM > 0 ? monthly * ((Math.pow(1+rM, y*12) - 1) / rM) * (1+rM) : monthly * 12 * y;
+            assetData.push(val.toFixed(0));
+            costData.push((monthly * 12 * y).toFixed(0));
+        }
+        drawDoubleChart('chart_target', assetData, costData);
+    }
+
+    function drawDoubleChart(id, assetData, costData) {
+        const ctx = document.getElementById(id).getContext('2d');
+        if (charts[id]) charts[id].destroy();
+        
+        const primaryColor = getThemeColor();
+        const isDark = document.body.getAttribute('data-theme') !== 'classic-blue';
+        
+        charts[id] = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: Array.from({length: assetData.length}, (_, i) => `${i}Y`),
+                datasets: [
+                    {
+                        label: '含息總資產',
+                        data: assetData,
+                        borderColor: primaryColor,
+                        backgroundColor: primaryColor + '33',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0
+                    },
+                    {
+                        label: '累計投入本金',
+                        data: costData,
+                        borderColor: isDark ? '#ffffff66' : '#999',
+                        borderDash: [5, 5],
+                        backgroundColor: 'transparent',
+                        fill: false,
+                        tension: 0,
+                        pointRadius: 0
+                    }
+                ]
+            },
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: { 
+                    legend: { 
+                        display: true, 
+                        position: 'top', 
+                        labels: { color: isDark ? '#fff' : '#333', boxWidth: 12 } 
+                    }
+                },
+                scales: { 
+                    x: { ticks: { color: isDark ? '#aaa' : '#666' }, grid: { color: isDark ? '#333' : '#eee' } },
+                    y: { 
+                        ticks: { color: isDark ? '#aaa' : '#666', callback: v => v >= 10000 ? (v/10000)+'萬' : v },
+                        grid: { color: isDark ? '#333' : '#eee' }
+                    }
+                }
+            }
+        });
+    }
+</script>
+</body>
+</html>
