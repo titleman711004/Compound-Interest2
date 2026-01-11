@@ -90,7 +90,7 @@
 <body data-theme="dark">
 
 <header>
-    <h1>📈 複利計算</h1>
+    <h1>📈複利計算</h1>
     <select class="theme-switcher" id="themeSelect">
         <option value="dark">🌙 極致深色</option>
         <option value="red">🔴 熱情紅</option>
@@ -107,20 +107,20 @@
 <div class="container">
     <div class="card featured" id="capture-mix">
         <div class="card-header">
-            <h2>💰 綜合複利 (本金+月存)</h2>
+            <h2>💰 複利(本金+月存)</h2>
             <button class="btn-screenshot" onclick="takeScreenshot('capture-mix', 'Titleman_資產分析')">📸</button>
         </div>
         <div class="input-grid">
             <div class="input-group">
-                <label>初始本金 ($)</label>
+                <label>本金 ($)</label>
                 <input type="number" id="p_mix" value="500000">
             </div>
             <div class="input-group">
-                <label>每月續存額 ($)</label>
+                <label>月存金額 ($)</label>
                 <input type="number" id="m_mix" value="10000">
             </div>
             <div class="input-group">
-                <label>年化報酬率 (%)</label>
+                <label>殖利率 (%)</label>
                 <input type="number" id="r_mix" value="7">
             </div>
             <div class="input-group">
@@ -142,7 +142,7 @@
             <input type="number" id="target" value="10000000">
         </div>
         <div class="input-group">
-            <label>預期報酬率 (%)</label>
+            <label>殖利率 (%)</label>
             <input type="number" id="r_target" value="7">
         </div>
         <div class="input-group">
@@ -160,22 +160,23 @@
     let charts = {};
     const fieldIds = ['p_mix', 'm_mix', 'r_mix', 't_mix', 'target', 'r_target', 't_target'];
 
-    // 截圖功能
+    // 截圖功能改為 JPG
     function takeScreenshot(elementId, fileName) {
         const element = document.getElementById(elementId);
-        // 暫時隱藏按鈕避免截進去
         const btn = element.querySelector('.btn-screenshot');
         btn.style.visibility = 'hidden';
 
         html2canvas(element, {
+            // JPG 必須指定背景色（不支援透明）
             backgroundColor: getComputedStyle(document.body).getPropertyValue('--bg-color'),
-            scale: 2, // 提高解析度
+            scale: 2,
             logging: false,
             useCORS: true
         }).then(canvas => {
             const link = document.createElement('a');
-            link.download = `${fileName}.png`;
-            link.href = canvas.toDataURL('image/png');
+            link.download = `${fileName}.jpg`;
+            // 指定為 image/jpeg，品質 0.9
+            link.href = canvas.toDataURL('image/jpeg', 0.9);
             link.click();
             btn.style.visibility = 'visible';
         });
@@ -185,13 +186,11 @@
         const savedTheme = localStorage.getItem('app-theme') || 'dark';
         document.body.setAttribute('data-theme', savedTheme);
         document.getElementById('themeSelect').value = savedTheme;
-
         fieldIds.forEach(id => {
             const savedVal = localStorage.getItem(id);
             if (savedVal) document.getElementById(id).value = savedVal;
             document.getElementById(id).addEventListener('input', updateAll);
         });
-
         document.getElementById('themeSelect').addEventListener('change', (e) => {
             const theme = e.target.value;
             document.body.setAttribute('data-theme', theme);
@@ -207,9 +206,7 @@
         renderGoal();
     }
 
-    function getThemeColor() {
-        return getComputedStyle(document.body).getPropertyValue('--primary-color').trim();
-    }
+    function getThemeColor() { return getComputedStyle(document.body).getPropertyValue('--primary-color').trim(); }
 
     function renderMixed() {
         const P = parseFloat(document.getElementById('p_mix').value) || 0;
@@ -278,4 +275,3 @@
 </script>
 </body>
 </html>
-
